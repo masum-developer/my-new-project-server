@@ -29,7 +29,8 @@ async function run() {
    
     const collegeCollection = client.db("martialDb").collection("colleges");
     const studentCollection = client.db("martialDb").collection("students");
-    
+    const userCollection = client.db("martialDb").collection("users");
+
     app.get('/colleges', async (req, res) => {
         const result = await collegeCollection.find().toArray();
        return res.send(result);
@@ -101,6 +102,64 @@ async function run() {
       const result= await studentCollection.findOne({candidateEmail:req.params.email});
      return res.send(result);
     })
+
+
+    app.get('/users', async (req, res) => {
+      const result = await userCollection.find().toArray();
+      return res.send(result);
+    })
+
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const query = { email: user.email }
+      const existingUser = await userCollection.findOne(query);
+      console.log('existing user: ', existingUser);
+      if (existingUser) {
+        return res.send({ message: 'user already exists' })
+      }
+      const result = await userCollection.insertOne(user);
+      return res.send(result);
+    })
+
+    app.get("/users/:email", async(req,res)=>{
+      const result= await userCollection.findOne({email:req.params.email});
+     return res.send(result);
+    })
+
+
+      app.get('/profile/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+
+      const options = {
+        projection: { _id:1, candidateName: 1, candidateEmail: 1, collegeName: 1, addressDetails: 1}
+      }
+      
+      const result = await userCollection.findOne(query, options);
+      return res.send(result);
+    })
+
+    
+
+      app.patch('/profile-update/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedProfile = req.body;
+      console.log(updatedProfile);
+      const updateDoc = {
+        $set: {
+          candidateName: updatedProfile.candidateName,
+          candidateEmail: updatedProfile.candidateEmail,
+          
+        },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc)
+      res.send(result);
+
+    })
+
+
     
 
     // Send a ping to confirm a successful connection
