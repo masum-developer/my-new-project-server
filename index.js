@@ -28,13 +28,79 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
    
     const collegeCollection = client.db("martialDb").collection("colleges");
+    const studentCollection = client.db("martialDb").collection("students");
     
+    app.get('/colleges', async (req, res) => {
+        const result = await collegeCollection.find().toArray();
+       return res.send(result);
+      })
     app.post('/colleges', async (req, res) => {
         const collegeItem = req.body;
         console.log(collegeItem);
         const result = await collegeCollection.insertOne(collegeItem);
        return res.send(result);
       })
+
+    app.patch('/colleges/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedCollege = req.body;
+      console.log(updatedCollege);
+      const updateDoc = {
+        $set: {
+          rating: updatedCollege.rating,
+          
+        },
+      };
+      const result = await collegeCollection.updateOne(filter, updateDoc)
+     return res.send(result);
+
+    })
+    app.get('/three-colleges', async (req, res) => {
+        const result = await collegeCollection.find().limit(3).toArray();;
+       return res.send(result);
+      })
+    
+
+    // college details
+      app.get('/college/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+
+      const options = {
+        projection: { _id:1, name: 1, image: 1, researchHistory: 1, admissionDate: 1, events: 1,rating:1,sportsName:1}
+      }
+      
+      const result = await collegeCollection.findOne(query, options);
+      return res.send(result);
+    })
+
+     //  college search by name
+    app.get("/college-name/:text", async (req, res) => {
+        const text = req.params.text;
+        const result = await collegeCollection
+          .find({
+               name: { $regex: text, $options: "i" } 
+          })
+          .toArray();
+       return res.send(result);
+      });
+
+    app.get('/admissions', async (req, res) => {
+        const result = await studentCollection.find().toArray();
+       return res.send(result);
+      })
+    app.post('/admissions', async (req, res) => {
+        const studentInfo = req.body;
+        console.log(studentInfo);
+        const result = await studentCollection.insertOne(studentInfo);
+       return res.send(result);
+      })
+
+    app.get("/my-college/:email", async(req,res)=>{
+      const result= await studentCollection.findOne({candidateEmail:req.params.email});
+     return res.send(result);
+    })
     
 
     // Send a ping to confirm a successful connection
